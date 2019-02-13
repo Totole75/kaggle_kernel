@@ -48,7 +48,7 @@ class gaussian_kernel(abstract_kernel):
         trnorms1 = np.mat([(np.dot(v,v.T)) for v in data_array_1]).T
         trnorms2 = np.mat([(np.dot(v,v.T)) for v in data_array_2]).T
         k1 = trnorms1 * np.mat(np.ones((data_array_2.shape[0], 1), dtype=np.float64)).T
-        k2 = np.mat(np.ones((self.n, 1), dtype=np.float64)) * trnorms2.T
+        k2 = np.mat(np.ones((data_array_1.shape[0], 1), dtype=np.float64)) * trnorms2.T
         k = k1 + k2 - 2* np.dot(data_array_1, data_array_2.T)
         k *= - 1./(2 * np.power(self.sigma, 2))
         kernel_array = np.exp(k)
