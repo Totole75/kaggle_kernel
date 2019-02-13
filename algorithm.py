@@ -67,3 +67,8 @@ alpha = S.optimize_alpha()
 print("alpha", alpha)
 print(S.test(alpha, data_array, [15,-1], np.array([0,1])))
 
+def ridge_regression(K, label_array, lambda_reg):
+    n = K.shape[0]
+    alpha = np.linalg.inv(K + lambda_reg*n*np.eye(n))
+    alpha = alpha.dot(label_array)
+    return(alpha)
