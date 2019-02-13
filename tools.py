@@ -32,7 +32,7 @@ def read_file(path_file):
 #for file in file_list:
 #    matrix = read_file(os.path.join(folder_name, file))
 
-file_feat = 'Xtr1_mat100.csv'
-feat = read_file(os.path.join(folder_name, file))
-file_label = 'Ytr1.csv'
-label = read_file(os.path.join(folder_name, file))
+# file_feat = 'Xtr1_mat100.csv'
+# feat = read_file(os.path.join(folder_name, file))
+# file_label = 'Ytr1.csv'
+# label = read_file(os.path.join(folder_name, file))
