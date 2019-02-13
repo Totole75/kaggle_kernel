@@ -100,7 +100,7 @@ def kernel_kmeans(kernel, cluster_nb, step_number=100):
 
 def cluster_test(clusters, kernel,
                 training_results,
-                test_array, test_results):
+                test_array):
     # Deleting the empty clusters
     clusters_to_delete = []
     for idx in range(len(clusters)):
@@ -109,7 +109,7 @@ def cluster_test(clusters, kernel,
     for idx in reversed(clusters_to_delete):
         del clusters[idx]
     cluster_nb = len(clusters)
-    test_nb = test_results.shape[0]
+    test_nb = test_array.shape[0]
     kernel_array = kernel.kernel_array
     # Computing the majority class of each cluster
     cluster_classes = np.zeros(cluster_nb)
