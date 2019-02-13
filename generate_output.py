@@ -27,7 +27,7 @@ for file_idx in range(3):
     #lin_ker = linear_kernel(train_array)
     clusters = kernel_kmeans(lin_ker, 50, 200)
     test_classes = cluster_test(clusters, lin_ker,
-                                label_array, train_array)
+                                label_array, test_array)
 
     #########################################
     ### Put your code before this comment ###

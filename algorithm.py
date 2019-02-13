@@ -82,12 +82,17 @@ def kernel_kmeans(kernel, cluster_nb, step_number=100):
         clusters[idx] = np.array(clusters[idx])
     # Optimization part
     for step_idx in tqdm(range(step_number)):
-        kernel_means = np.zeros((cluster_nb, kernel.n))
+        first_term = np.zeros(cluster_nb)
+        third_term = np.zeros((cluster_nb, kernel.n))
         for idx in range(cluster_nb):
-            if (clusters[idx].shape[0] != 0):
-                # And else we do nothing
-                kernel_means[idx,:] = kernel_array[clusters[idx], :].mean(axis=0)
-        cluster_rep = np.argmax(kernel_means, axis=0)
+            first_term[idx] = kernel_array[clusters[idx],:][:,clusters[idx]].mean() 
+            third_term[idx, :] = kernel_array[clusters[idx], :].mean(axis=0)
+        first_term = np.tile(first_term, (kernel.n, 1)).T
+        second_term = np.diag(kernel_array)
+        second_term = np.tile(second_term, (cluster_nb, 1))
+        squared_distances = first_term + second_term - 2*third_term
+
+        cluster_rep = np.argmin(squared_distances, axis=0)
         # Forming the new clusters
         clusters = []
         for idx in range(cluster_nb):
@@ -96,6 +101,13 @@ def kernel_kmeans(kernel, cluster_nb, step_number=100):
             clusters[cluster_rep[idx]].append(idx)
         for idx in range(cluster_nb):
             clusters[idx] = np.array(clusters[idx])
+
+    # kernel_means = np.zeros((cluster_nb, kernel.n))
+    # for idx in range(cluster_nb):
+    #     if (clusters[idx].shape[0] != 0):
+    #         kernel_means[idx,:] = kernel_array[clusters[idx], :].mean(axis=0)
+    # print(kernel_means)
+
     return clusters
 
 def cluster_test(clusters, kernel,
@@ -118,14 +130,14 @@ def cluster_test(clusters, kernel,
     kernel_values = kernel.compute_kernel(kernel.data_array, test_array)
     # Computing distances between the test values and the cluster centroids
     first_term = np.zeros(cluster_nb)
-    third_term = np.zeros((cluster_nb, test_nb))
+    third_term = np.zeros((cluster_nb, kernel.n))
     for idx in range(cluster_nb):
-        first_term[idx] = kernel_array[clusters[idx], clusters[idx]].mean()
-        third_term[idx, :] = kernel_values[clusters[idx], :].mean(axis=0)
-    first_term = np.tile(first_term, (test_nb, 1)).T
-    second_term = np.diag(kernel.compute_kernel(test_array, test_array))
+        first_term[idx] = kernel_array[clusters[idx],:][:,clusters[idx]].mean() 
+        third_term[idx, :] = kernel_array[clusters[idx], :].mean(axis=0)
+    first_term = np.tile(first_term, (kernel.n, 1)).T
+    second_term = np.diag(kernel_array)
     second_term = np.tile(second_term, (cluster_nb, 1))
-
+    
     squared_distances = first_term + second_term - 2*third_term
     # Assigning each test value to a cluster
     cluster_test_rep = np.argmin(squared_distances, axis=0)

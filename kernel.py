@@ -13,7 +13,7 @@ class abstract_kernel:
     def center_kernel_array(self):
         U_array = np.ones(self.kernel_array.shape) / float(self.n)
         centering_array = np.identity(self.n) - U_array
-        self.kernel_array += (centering_array).dot(self.kernel_array.dot(centering_array))
+        self.kernel_array = (centering_array).dot(self.kernel_array.dot(centering_array))
 
     def predict(self, test_array, alpha):
         K = self.compute_kernel(self.data_array, test_array)
