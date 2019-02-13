@@ -8,6 +8,7 @@ from tools import *
 folder_name = "data"
 
 result_list = []
+success_percentage = []
 
 for file_idx in range(3):
     train_file_name = "Xtr" + str(file_idx) + "_mat100.csv"
@@ -22,16 +23,20 @@ for file_idx in range(3):
     ### This is where you put your code ###
     #######################################
 
-    lin_ker = linear_kernel(train_array)
+    lin_ker = gaussian_kernel(train_array, 0.1)
+    #lin_ker = linear_kernel(train_array)
     clusters = kernel_kmeans(lin_ker, 50, 200)
     test_classes = cluster_test(clusters, lin_ker,
-                                label_array, test_array)
+                                label_array, train_array)
 
     #########################################
     ### Put your code before this comment ###
     #########################################    
     result_list.append(test_classes)
+    success_percentage.append(np.mean(np.equal(test_classes, label_array)))
 
+success_percentage = np.mean(success_percentage)
+print("Pourcentage de reussite ", success_percentage)
 tools.write_output(result_list[0], 
                    result_list[1], 
                    result_list[2],
