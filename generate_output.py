@@ -18,15 +18,18 @@ for file_idx in range(3):
     label_array = tools.read_file(os.path.join(folder_name, result_file_name))
     test_array = tools.read_file(os.path.join(folder_name, test_file_name))
 
-    # This is where you put your code
+    #######################################
+    ### This is where you put your code ###
+    #######################################
 
     lin_ker = linear_kernel(train_array)
     clusters = kernel_kmeans(lin_ker, 50, 200)
     test_classes = cluster_test(clusters, lin_ker,
                                 label_array, test_array)
 
-    # Put your code before this comment
-    
+    #########################################
+    ### Put your code before this comment ###
+    #########################################    
     result_list.append(test_classes)
 
 tools.write_output(result_list[0], 

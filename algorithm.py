@@ -115,7 +115,7 @@ def cluster_test(clusters, kernel,
     cluster_classes = np.zeros(cluster_nb)
     for idx in range(cluster_nb):
         cluster_classes[idx] = round(training_results[clusters[idx]].mean())
-    kernel_values = kernel.compute_kernel_against(test_array)
+    kernel_values = kernel.compute_kernel(kernel.data_array, test_array)
     # Computing distances between the test values and the cluster centroids
     first_term = np.zeros(cluster_nb)
     third_term = np.zeros((cluster_nb, test_nb))

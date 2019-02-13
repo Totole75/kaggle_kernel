@@ -19,20 +19,20 @@ test_array = data_array[training_nb:, :]
 test_results = result_array[training_nb:]
 
 sigma = 1
-lambda_reg = 1
+# lambda_reg = 1
 gaus_ker = gaussian_kernel(training_array, sigma)
 lin_ker = linear_kernel(training_array)
 
-alpha_ridge = ridge_regression(gaus_ker.kernel_array, training_results, lambda_reg)
-alpha_lin = ridge_regression(lin_ker.kernel_array, training_results, lambda_reg)
+# alpha_ridge = ridge_regression(gaus_ker.kernel_array, training_results, lambda_reg)
+# alpha_lin = ridge_regression(lin_ker.kernel_array, training_results, lambda_reg)
 
-prediction_ridge = gaus_ker.predict(test_array, alpha_ridge)
+# prediction_ridge = gaus_ker.predict(test_array, alpha_ridge)
 
 
 clusters = kernel_kmeans(lin_ker, 50, 200)
 test_classes = cluster_test(clusters, lin_ker,
                             training_results,
-                            test_array, test_results)
+                            test_array)
 
 print(np.equal(test_classes, test_results).mean())
 

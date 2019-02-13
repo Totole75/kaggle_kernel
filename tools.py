@@ -38,16 +38,3 @@ def write_output(label1, label2, label3, submission_file):
             f.write(str(len(label1) + len(label2) + index) + ',' + str(int(lab)))
             if index < len(label3) - 1:
                 f.write('\n')
-    
-#folder_name = 'data'
-#file_list = os.listdir(folder_name)
-
-#for file in file_list:
-#    matrix = read_file(os.path.join(folder_name, file))
-
-# file_feat = 'Xtr1_mat100.csv'
-# feat = read_file(os.path.join(folder_name, file))
-# file_label = 'Ytr1.csv'
-# label = read_file(os.path.join(folder_name, file))
-
-#write_output(label, label, label, "submission_file.csv")
