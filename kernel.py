@@ -4,11 +4,22 @@ class linear_kernel:
     """
     Linear kernel : just your regular scalar product
     """
-    def __init__(self, data_array):
+    def __init__(self, data_array, center_kernel=True):
         self.data_array = data_array
+        self.n = data_array.shape[0]
         # Computing the kernel array
         self.kernel_array = np.dot(data_array, data_array.T)
-    
+        if center_kernel:
+            U_array = np.ones(self.kernel_array.shape) / float(self.n)
+            centering_array = np.identity(self.n) - U_array
+            self.kernel_array += (centering_array).dot(self.kernel_array.dot(centering_array))
+
+    def compute_kernel_against(self, test_array):
+        return np.dot(self.data_array, test_array.T)
+
+    def compute_kernel(self, first_array, second_array):
+        return np.dot(first_array, second_array.T)
+
 class gaussian_kernel:
     def __init__(self, data_array, sigma):
         self.data_array = data_array
@@ -29,4 +40,3 @@ class gaussian_kernel:
     def predict(self, test_array, alpha):
         K = self.compute_kernel(self.data_array, test_array)
         return(alpha.reshape(1,-1).dot(K))
-        

@@ -1,6 +1,6 @@
 import numpy as np
+from tqdm import tqdm
 from scipy.optimize import minimize
-
 from kernel import linear_kernel
 
 class SVM:
@@ -59,16 +59,79 @@ class SVM:
             print(f_predict)
         return np.array(labels)
 
-
-data_array = np.array([10,12,-5,8,-6,-4]).reshape((6, 1))
-k = linear_kernel(data_array)
-S = SVM([0,0,1,0,1,1], 0.0001, k)
-alpha = S.optimize_alpha()
-print("alpha", alpha)
-print(S.test(alpha, data_array, [15,-1], np.array([0,1])))
-
 def ridge_regression(K, label_array, lambda_reg):
     n = K.shape[0]
     alpha = np.linalg.inv(K + lambda_reg*n*np.eye(n))
     alpha = alpha.dot(label_array)
     return(alpha)
+
+def kernel_kmeans(kernel, cluster_nb, step_number=100):
+    kernel_array = kernel.kernel_array
+    # Initialization : creating random clusters
+    clusters = []
+    for idx in range(cluster_nb):
+        clusters.append([])
+    cluster_rep = np.random.randint(cluster_nb, size=kernel.n)
+    for idx in range(cluster_nb):
+        #  Done in order to avoid empty clusters at the beginning
+        clusters[idx].append(idx)
+    for idx in range(cluster_nb, kernel.n):
+        clusters[cluster_rep[idx]].append(idx)
+    # Turning them into arrays for better handling
+    for idx in range(cluster_nb):
+        clusters[idx] = np.array(clusters[idx])
+    # Optimization part
+    for step_idx in tqdm(range(step_number)):
+        kernel_means = np.zeros((cluster_nb, kernel.n))
+        for idx in range(cluster_nb):
+            if (clusters[idx].shape[0] != 0):
+                # And else we do nothing
+                kernel_means[idx,:] = kernel_array[clusters[idx], :].mean(axis=0)
+        cluster_rep = np.argmax(kernel_means, axis=0)
+        # Forming the new clusters
+        clusters = []
+        for idx in range(cluster_nb):
+            clusters.append([])
+        for idx in range(kernel.n):
+            clusters[cluster_rep[idx]].append(idx)
+        for idx in range(cluster_nb):
+            clusters[idx] = np.array(clusters[idx])
+    return clusters
+
+def cluster_test(clusters, kernel,
+                training_results,
+                test_array, test_results):
+    # Deleting the empty clusters
+    clusters_to_delete = []
+    for idx in range(len(clusters)):
+        if (clusters[idx].shape[0] == 0):
+            clusters_to_delete.append(idx)
+    for idx in reversed(clusters_to_delete):
+        del clusters[idx]
+    cluster_nb = len(clusters)
+    test_nb = test_results.shape[0]
+    kernel_array = kernel.kernel_array
+    # Computing the majority class of each cluster
+    cluster_classes = np.zeros(cluster_nb)
+    for idx in range(cluster_nb):
+        cluster_classes[idx] = round(training_results[clusters[idx]].mean())
+    kernel_values = kernel.compute_kernel_against(test_array)
+    # Computing distances between the test values and the cluster centroids
+    first_term = np.zeros(cluster_nb)
+    third_term = np.zeros((cluster_nb, test_nb))
+    for idx in range(cluster_nb):
+        first_term[idx] = kernel_array[clusters[idx], clusters[idx]].mean()
+        third_term[idx, :] = kernel_values[clusters[idx], :].mean(axis=0)
+    first_term = np.tile(first_term, (test_nb, 1)).T
+    second_term = np.diag(kernel.compute_kernel(test_array, test_array))
+    second_term = np.tile(second_term, (cluster_nb, 1))
+
+    squared_distances = first_term + second_term - 2*third_term
+    # Assigning each test value to a cluster
+    cluster_test_rep = np.argmin(squared_distances, axis=0)
+    # Assigning the cluster class to the test value
+    test_classes = np.zeros(test_nb)
+    for idx in range(test_nb):
+        test_classes[idx] = cluster_classes[cluster_test_rep[idx]]
+
+    return test_classes
