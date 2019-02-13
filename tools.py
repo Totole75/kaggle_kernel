@@ -1,4 +1,4 @@
-import os
+import os as os
 import numpy as np
 
 def read_file(path_file):
