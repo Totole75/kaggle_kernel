@@ -31,7 +31,7 @@ for file_idx in range(3):
 
     sigma = 0.005
     # lambda_reg = 1
-    gaus_ker = gaussian_kernel(training_array, sigma)
+    gauss_ker = gaussian_kernel(training_array, sigma)
     lin_ker = linear_kernel(training_array)
 
     # alpha_ridge = ridge_regression(gaus_ker.kernel_array, training_labels, lambda_reg)
@@ -39,12 +39,9 @@ for file_idx in range(3):
 
     # prediction_ridge = gaus_ker.predict(test_array, alpha_ridge)
 
-    #lin_ker = linear_kernel(train_array)
-    clusters = kernel_kmeans(gaus_ker, 100, 20)
-    # clusters = kernel_kmeans(gaus_ker, 30, 300)
-    test_classes = cluster_test(clusters, gaus_ker,
-                                training_labels,
-                                test_array)
+    kmeans_clustering = Kmeans(gauss_ker)
+    kmeans_clustering.create_clusters(cluster_nb=100, restart_nb=20)
+    test_classes = kmeans_clustering.predict(training_labels, test_array)
 
     #########################################
     ### Put your code before this comment ###
@@ -53,8 +50,6 @@ for file_idx in range(3):
     result_list.append(test_classes)
     success_percentage.append(np.mean(np.equal(test_classes, test_labels)))
     print("Result for file " + str(file_idx) + " : " + str(success_percentage[file_idx]))
-
-
 
 # data_array = np.array([10,12,-5,8,-6,-4]).reshape((6, 1))
 # k = linear_kernel(data_array)
