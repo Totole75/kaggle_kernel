@@ -4,6 +4,9 @@ import tools
 from kernel import *
 from algorithm import *
 
+from sklearn.cluster import KMeans
+
+
 folder_name = "data"
 
 result_list = []
@@ -26,7 +29,7 @@ for file_idx in range(3):
     ### This is where you put your code ###
     #######################################
 
-    sigma = 0.1
+    sigma = 0.005
     # lambda_reg = 1
     gaus_ker = gaussian_kernel(training_array, sigma)
     lin_ker = linear_kernel(training_array)
@@ -36,9 +39,10 @@ for file_idx in range(3):
 
     # prediction_ridge = gaus_ker.predict(test_array, alpha_ridge)
 
-
-    clusters = kernel_kmeans(gaus_ker, 30, 300)
-    test_classes = cluster_test(clusters, lin_ker,
+    #lin_ker = linear_kernel(train_array)
+    clusters = kernel_kmeans(gaus_ker, 100, 20)
+    # clusters = kernel_kmeans(gaus_ker, 30, 300)
+    test_classes = cluster_test(clusters, gaus_ker,
                                 training_labels,
                                 test_array)
 
