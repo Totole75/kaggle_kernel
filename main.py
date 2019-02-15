@@ -29,19 +29,28 @@ for file_idx in range(3):
     ### This is where you put your code ###
     #######################################
 
-    sigma = 0.005
+    sigma = 0.01
     # lambda_reg = 1
+    lambda_svm = 0.1
     gauss_ker = gaussian_kernel(training_array, sigma)
     lin_ker = linear_kernel(training_array)
+    svm = SVM(training_labels, lambda_svm, gauss_ker)
+    alpha_svm = svm.optimize_alpha()
+    predictions = gauss_ker.predict(test_array, alpha_svm)
+    test_classes = []
+    for i in range(len(test_labels)):
+        test_classes.append(0 if predictions[0, i] < 0 else 1)
+    test_classes = np.array(test_classes)
+    print("percentage of ones: ", np.mean(test_classes))
 
     # alpha_ridge = ridge_regression(gaus_ker.kernel_array, training_labels, lambda_reg)
     # alpha_lin = ridge_regression(lin_ker.kernel_array, training_labels, lambda_reg)
 
     # prediction_ridge = gaus_ker.predict(test_array, alpha_ridge)
 
-    kmeans_clustering = Kmeans(gauss_ker)
-    kmeans_clustering.create_clusters(cluster_nb=100, restart_nb=20)
-    test_classes = kmeans_clustering.predict(training_labels, test_array)
+    #kmeans_clustering = Kmeans(gauss_ker)
+    #kmeans_clustering.create_clusters(cluster_nb=100, restart_nb=20)
+    #test_classes = kmeans_clustering.predict(training_labels, test_array)
 
     #########################################
     ### Put your code before this comment ###

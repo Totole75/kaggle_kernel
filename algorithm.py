@@ -1,7 +1,8 @@
 import numpy as np
 from tqdm import tqdm
 from scipy.optimize import minimize
-from kernel import linear_kernel
+import cplex
+from kernel import *
 
 class SVM:
 
@@ -15,49 +16,50 @@ class SVM:
 
     def optimize_alpha(self):
         bound = (1 / (2 * self.lamb * self.n))
-        print("bound", bound)
+        #print("bound", bound)
         c = np.array(self.labels_pos_neg)
         H = np.array(self.kernel_array)
         A = np.concatenate([np.diag(self.labels_pos_neg), - np.diag(self.labels_pos_neg)], axis=0)
         b = np.concatenate([np.array(bound * np.ones(self.n)), np.zeros(self.n)], axis=0)
-        #print("A:", A)
-        #print("H:", H)
-        #print("b:", b)
-        #print("c:", c)
-        alpha_init = np.zeros(self.n).reshape((self.n, 1))
+        solver = cplex.Cplex()
+        solver.variables.add(names = [str(i) for i in range(self.n)],
+                             lb = [0.0 if self.labels_pos_neg[i] == 1 else - bound for i in range(self.n)],
+                             ub = [0.0 if self.labels_pos_neg[i] == - 1 else bound for i in range(self.n)],
+                             types = [solver.variables.type.continuous] * self.n)
 
-        def objective(x, sign=-1.):
-            return sign * (- 0.5 * np.dot(x.T, np.dot(H, x)) + np.dot(c, x))
+        list_coeffs_lin = [(str(i), 2 * float(c[i])) for i in range(self.n)]
+        solver.objective.set_linear(list_coeffs_lin)
 
-        def jacobien(x, sign=-1.):
-            return sign * (np.dot(x.T, H) + c)
+        list_coeffs_quad = []
+        for i in range(self.n):
+            for j in range(i, self.n):
+                list_coeffs_quad.append((i, j, - 2 * H[i][j] if i == j else - H[i][j]))
+        solver.objective.set_quadratic_coefficients(list_coeffs_quad)
 
-        constraints = {"type": "ineq",
-                       "fun": lambda x: b - np.dot(A, x),
-                       "jac": lambda x: - A}
+        solver.objective.set_sense(solver.objective.sense.maximize)
 
-        options = {"disp": False}
-
-        solve = minimize(objective, alpha_init, jac=jacobien, constraints=constraints, method='SLSQP', options=options)
-
-        return solve['x']
-
-    def test(self, alpha, data_training, data_test, real_labels):
-        predicted_labels = self.predict(alpha, data_training, data_test)
-        print(predicted_labels)
-        return sum(np.equal(predicted_labels, real_labels)) / len(real_labels)
-
-    def predict(self, alpha, data_training, data_test):
-        labels = []
-        for data in data_test:
-            k_values = np.array([self.kernel.compute_value(data, data_train) for data_train in data_training])
-            f_predict = np.sum(alpha * k_values)
-            if f_predict > 0:
-                labels.append(1)
-            else:
-                labels.append(0)
-            print(f_predict)
-        return np.array(labels)
+        """solver.linear_constraints.add(lin_expr = [cplex.SparsePair(ind=[str(i)], val=[float(self.labels_pos_neg[i])]) for i in range(self.n)],
+                                      senses = ["L"] * self.n,
+                                      rhs = [bound] * self.n,
+                                      names = ["c" + str(i) for i in range(self.n)])
+        solver.linear_constraints.add(lin_expr = [cplex.SparsePair(ind=[str(i)], val=[float(self.labels_pos_neg[i])]) for i in range(self.n)],
+                                      senses = ["G"] * self.n,
+                                      rhs = [0.0] * self.n,
+                                      names = ["c" + str(i + self.n) for i in range(self.n)])"""
+                                      
+        solver.parameters.optimalitytarget.set(3)
+        solver.set_log_stream(None)
+        solver.set_error_stream(None)
+        solver.set_warning_stream(None)
+        solver.set_results_stream(None)
+        solver.solve()
+        status = solver.solution.get_status()
+        print(solver.solution.status[status])
+        #solver.write("test.lp")
+        #print(solver.objective.get_num_quadratic_nonzeros())
+        #print(solver.solution.get_objective_value())
+        #print(solver.solution.get_values([str(i) for i in range(self.n)]))
+        return np.array(solver.solution.get_values([str(i) for i in range(self.n)]))
 
 def ridge_regression(K, label_array, lambda_reg):
     n = K.shape[0]
