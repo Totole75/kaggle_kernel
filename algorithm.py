@@ -14,11 +14,16 @@ class SVM:
         self.kernel_array = kernel.kernel_array
         self.n = len(self.labels)
 
-    def optimize_alpha(self):
-        bound = (1 / (2 * self.lamb * self.n))
+    def optimize_alpha(self, method=1):
+        
         #print("bound", bound)
         c = np.array(self.labels_pos_neg)
         H = np.array(self.kernel_array)
+        if method == 2:
+            H = H + self.n * self.lamb * np.identity(self.n)
+            bound = np.inf
+        else:
+            bound = (1 / (2 * self.lamb * self.n))
         A = np.concatenate([np.diag(self.labels_pos_neg), - np.diag(self.labels_pos_neg)], axis=0)
         b = np.concatenate([np.array(bound * np.ones(self.n)), np.zeros(self.n)], axis=0)
         solver = cplex.Cplex()
