@@ -62,11 +62,11 @@ class SVM:
         return np.array(solver.solution.get_values([str(i) for i in range(self.n)]))
 
 class logistic_regression:
-    def __init__(self, label_array, lambda_reg, K):
+    def __init__(self, label_array, lambda_reg, kernel):
         self.label_array = label_array
         self.lambda_reg = lambda_reg
-        self.K = K
-        self.n = K.shape[0]
+        self.K = kernel.kernel_array
+        self.n = self.K.shape[0]
         
     def ridge_regression(self):
         alpha = np.linalg.inv(self.K + self.lambda_reg*self.n*np.eye(self.n))
@@ -83,7 +83,7 @@ class logistic_regression:
     def sigmoid(self, x):
         return 1 / (1 + np.exp(-x))
     
-    def kernel_logistic_regression(self):
+    def optimize_alpha(self):
         #Initialisation
         y = self.label_array.reshape(-1,1)
         t = 0
