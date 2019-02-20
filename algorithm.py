@@ -61,11 +61,48 @@ class SVM:
         #print(solver.solution.get_values([str(i) for i in range(self.n)]))
         return np.array(solver.solution.get_values([str(i) for i in range(self.n)]))
 
-def ridge_regression(K, label_array, lambda_reg):
-    n = K.shape[0]
-    alpha = np.linalg.inv(K + lambda_reg*n*np.eye(n))
-    alpha = alpha.dot(label_array)
-    return(alpha)
+class logistic_regression:
+    def __init__(self, label_array, lambda_reg, K):
+        self.label_array = label_array
+        self.lambda_reg = lambda_reg
+        self.K = K
+        self.n = K.shape[0]
+        
+    def ridge_regression(self):
+        alpha = np.linalg.inv(self.K + self.lambda_reg*self.n*np.eye(self.n))
+        alpha = alpha.dot(self.label_array)
+        return(alpha)
+    
+    def ridge_weighted_regression(self, W, y):
+        W = np.sqrt(W)
+        M = np.linalg.inv(W.dot(self.K).dot(W) + self.lambda_reg*self.n*np.eye(self.n))
+        alpha = W.dot(M).dot(W).dot(y)
+        alpha = alpha.reshape((-1,1))
+        return(alpha)
+    
+    def sigmoid(self, x):
+        return 1 / (1 + np.exp(-x))
+    
+    def kernel_logistic_regression(self):
+        #Initialisation
+        y = self.label_array.reshape(-1,1)
+        t = 0
+        W = np.diag(np.ones(self.label_array.shape[0]))
+        alpha_new = self.ridge_weighted_regression(W, self.label_array)
+        gap = 1
+        while t < 100 and gap>1e-15:
+            alpha_old = alpha_new
+            m = self.K.dot(alpha_new).reshape(-1,1)
+            P = - self.sigmoid(-np.multiply(y,m))
+            ### DIAG de vector 2D
+            vect = np.array(np.multiply(self.sigmoid(m),self.sigmoid(-m)))
+            W = np.diag(vect.reshape(-1))
+            z = m - y/P
+            alpha_new = self.ridge_weighted_regression(W, z)
+            gap = np.mean(abs(alpha_old - alpha_new))
+            print(gap)
+            t = t+1
+        return(alpha_new)
 
 class Kmeans:
 
