@@ -8,8 +8,6 @@ class abstract_kernel:
         self.data_array = data_array
         self.n = data_array.shape[0]
         self.kernel_array = np.zeros((self.n, self.n))
-        if center_kernel:
-            self.center_kernel_array()
         return
 
     def center_kernel_array(self):
@@ -33,6 +31,8 @@ class linear_kernel(abstract_kernel):
         abstract_kernel.__init__(self, data_array, center_kernel)
         # Computing the kernel array
         self.kernel_array = np.dot(data_array, data_array.T)
+        if center_kernel:
+            abstract_kernel.center_kernel_array(self)
 
     def compute_kernel(self, first_array, second_array):
         return np.dot(first_array, second_array.T)
@@ -42,6 +42,8 @@ class gaussian_kernel(abstract_kernel):
         abstract_kernel.__init__(self, data_array, center_kernel)
         self.sigma = sigma
         self.kernel_array = self.compute_kernel(data_array, data_array)
+        if center_kernel:
+            abstract_kernel.center_kernel_array(self)
         
     def compute_kernel(self, data_array_1, data_array_2):
         trnorms1 = np.mat([(np.dot(v,v.T)) for v in data_array_1]).T
