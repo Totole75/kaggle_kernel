@@ -191,8 +191,10 @@ class Kmeans:
         self.clusters = all_clusters[max_energy_idx]
         self.cluster_nb = len(self.clusters)
 
-    def predict(self, training_results, test_array):
+    def predict(self, training_array, training_results, test_array):
         test_nb = test_array.shape[0]
+        test_kernel_array = self.kernel.compute_kernel(test_array, test_array)
+        compare_kernel_array = self.kernel.compute_kernel(training_array, test_array)
         # Computing the majority class of each cluster
         cluster_classes = np.zeros(self.cluster_nb)
         for idx in range(self.cluster_nb):
@@ -202,12 +204,12 @@ class Kmeans:
                 cluster_classes[idx] = 0
         # Computing distances between the test values and the cluster centroids
         first_term = np.zeros(self.cluster_nb)
-        third_term = np.zeros((self.cluster_nb, self.n))
+        third_term = np.zeros((self.cluster_nb, test_nb))
         for idx in range(self.cluster_nb):
             first_term[idx] = self.kernel_array[self.clusters[idx],:][:,self.clusters[idx]].mean() 
-            third_term[idx, :] = self.kernel_array[self.clusters[idx], :].mean(axis=0)
-        first_term = np.tile(first_term, (self.n, 1)).T
-        second_term = np.diag(self.kernel_array)
+            third_term[idx, :] = compare_kernel_array[self.clusters[idx], :].mean(axis=0)
+        first_term = np.tile(first_term, (test_nb, 1)).T
+        second_term = np.diag(test_kernel_array)
         second_term = np.tile(second_term, (self.cluster_nb, 1))
         
         squared_distances = first_term + second_term - 2*third_term

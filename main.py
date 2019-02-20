@@ -50,7 +50,7 @@ for file_idx in range(3):
 
     #kmeans_clustering = Kmeans(gauss_ker)
     #kmeans_clustering.create_clusters(cluster_nb=100, restart_nb=20)
-    #test_classes = kmeans_clustering.predict(training_labels, test_array)
+    #test_classes = kmeans_clustering.predict(training_array, training_labels, test_array)
 
     #########################################
     ### Put your code before this comment ###
