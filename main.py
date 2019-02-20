@@ -57,7 +57,7 @@ for file_idx in range(3):
     #########################################
     
     result_list.append(test_classes)
-    success_percentage.append(np.mean(np.equal(test_classes, test_labels)))
+    success_percentage.append(np.mean(np.equal(test_classes, ((test_labels+1)/2).astype(int))))
     print("Result for file " + str(file_idx) + " : " + str(success_percentage[file_idx]))
 
 # data_array = np.array([10,12,-5,8,-6,-4]).reshape((6, 1))

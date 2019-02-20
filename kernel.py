@@ -4,7 +4,7 @@ class abstract_kernel:
     """
     General class for creating kernels, used with heritage
     """
-    def __init__(self, data_array):
+    def __init__(self, data_array, center_kernel):
         self.data_array = data_array
         self.n = data_array.shape[0]
         self.kernel_array = np.zeros((self.n, self.n))
@@ -28,7 +28,7 @@ class linear_kernel(abstract_kernel):
     Linear kernel : just your regular scalar product
     """
     def __init__(self, data_array, center_kernel=True):
-        abstract_kernel.__init__(self, data_array)
+        abstract_kernel.__init__(self, data_array, center_kernel)
         # Computing the kernel array
         self.kernel_array = np.dot(data_array, data_array.T)
         if center_kernel:
@@ -38,11 +38,12 @@ class linear_kernel(abstract_kernel):
         return np.dot(first_array, second_array.T)
 
 class gaussian_kernel(abstract_kernel):
-    def __init__(self, data_array, sigma):
-        self.data_array = data_array
+    def __init__(self, data_array, sigma, center_kernel=True):
+        abstract_kernel.__init__(self, data_array, center_kernel)
         self.sigma = sigma
-        self.n = self.data_array.shape[0]
         self.kernel_array = self.compute_kernel(data_array, data_array)
+        if center_kernel:
+            abstract_kernel.center_kernel_array(self)
         
     def compute_kernel(self, data_array_1, data_array_2):
         trnorms1 = np.mat([(np.dot(v,v.T)) for v in data_array_1]).T
