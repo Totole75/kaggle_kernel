@@ -184,13 +184,17 @@ class Kmeans:
         # Keeping the clustering that maximizes the objective
         max_energy_idx = np.argmax(np.array(all_energies))
         self.clusters = all_clusters[max_energy_idx]
+        self.cluster_nb = len(self.clusters)
 
     def predict(self, training_results, test_array):
         test_nb = test_array.shape[0]
         # Computing the majority class of each cluster
         cluster_classes = np.zeros(self.cluster_nb)
         for idx in range(self.cluster_nb):
-            cluster_classes[idx] = round(training_results[self.clusters[idx]].mean())
+            if training_results[self.clusters[idx]].mean() >= 0:
+                cluster_classes[idx] = 1
+            else :
+                cluster_classes[idx] = 0
         # Computing distances between the test values and the cluster centroids
         first_term = np.zeros(self.cluster_nb)
         third_term = np.zeros((self.cluster_nb, self.n))
