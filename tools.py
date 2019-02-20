@@ -10,7 +10,7 @@ def read_file(path_file):
             matrix = np.zeros(len(L)-1)
             for index, l in enumerate(L):
                 if index > 0:
-                    matrix[index-1] = int(l.split(',')[1])
+                    matrix[index-1] = 2*int(l.split(',')[1])-1
         elif len(L[0]) == 7:
             #X file
             matrix = []
