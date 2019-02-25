@@ -54,3 +54,17 @@ class gaussian_kernel(abstract_kernel):
         k *= - 1./(2 * np.power(self.sigma, 2))
         kernel_array = np.exp(k)
         return(kernel_array)
+
+class sigmoid_kernel(abstract_kernel):
+    def __init__(self, data_array, alpha, constant=0, center_kernel=True):
+        abstract_kernel.__init__(self, data_array, center_kernel)
+        self.alpha = alpha
+        self.constant = constant
+        self.kernel_array = self.compute_kernel(data_array, data_array)
+        if center_kernel:
+            abstract_kernel.center_kernel_array(self)
+        
+    def compute_kernel(self, data_array_1, data_array_2):
+        multiplied_matrix = np.dot(data_array_1, data_array_2.T)
+        kernel_array = np.tanh(self.alpha * multiplied_matrix + self.constant)
+        return(kernel_array)
