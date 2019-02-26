@@ -105,7 +105,7 @@ class logistic_regression:
             z = m - y/P
             alpha_new = self.ridge_weighted_regression(W, z)
             gap = np.mean(abs(alpha_old - alpha_new))
-            print(gap)
+            #print(gap)
             t = t+1
         return(alpha_new)
 

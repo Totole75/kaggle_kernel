@@ -1,4 +1,13 @@
 import numpy as np
+from numba import jit, prange
+from tqdm import tqdm
+
+def transform_array(data_array):
+    res_array = np.zeros((len(data_array), len(data_array[0])))
+    for str_idx in range(len(data_array)):
+        for idx in range(len(data_array[0])):
+            res_array[str_idx, idx] = ord(data_array[str_idx][idx])
+    return res_array
 
 class abstract_kernel:
     """
@@ -120,3 +129,84 @@ class levenshtein_kernel(abstract_kernel):
         k *= (- 1./(2 * np.power(self.sigma, 2)))
         kernel_array = np.exp(k)
         return(kernel_array)
+
+class substring_kernel(abstract_kernel):
+    """
+    Substring kernel
+    """
+    def __init__(self, data_array, k, lmb, center_kernel=True, load_path=None):
+        abstract_kernel.__init__(self, data_array, center_kernel)
+        self.k = k
+        self.lmb = lmb
+        if (load_path==None):
+            # Computing the kernel array
+            self.kernel_array = self.compute_kernel(data_array, data_array)  
+        else:
+            self.kernel_array = np.load(load_path)
+        if center_kernel:
+            abstract_kernel.center_kernel_array(self)
+
+    def compute_kernel(self, first_array, second_array):
+        @jit(nopython=True, fastmath=True)
+        def compute_rec_val(str_a, str_b, len_a, len_b, k, lmb, rec_val):
+            for cur_k in range(1, k+1):
+                for cur_i in range(cur_k, len_a+1):
+                    for cur_j in range(cur_k, len_b+1):
+                        rec_val[cur_k, cur_i, cur_j] = lmb*(rec_val[cur_k, cur_i-1, cur_j] + rec_val[cur_k, cur_i, cur_j-1] - lmb*rec_val[cur_k, cur_i-1, cur_j-1])
+                        if (str_a[cur_i-1] == str_b[cur_j-1]):
+                            rec_val[cur_k, cur_i, cur_j] += lmb*lmb*rec_val[cur_k-1, cur_i-1, cur_j-1]
+            return rec_val
+
+        @jit(nopython=True, fastmath=True)
+        def compute_kernel_cell(str_a, str_b, k, lmb):
+            len_a = len(str_a)
+            len_b = len(str_b)
+            
+            # Computing the recursive side function B
+            rec_val = np.zeros((k+1, len_a+1, len_b+1))
+            rec_val[0, :, :] = np.ones((len_a+1, len_b+1))
+            # Completing the array of the recursion function
+            rec_val = compute_rec_val(str_a, str_b, len_a, len_b, k, lmb, rec_val)
+            
+            # Computing the final value
+            ker_val = np.zeros((len_a+1, len_b+1))
+            # Finishing
+            for cur_i in range(k-1, len_a):
+                sec_term = 0
+                for cur_j in range(1, k+1):
+                    if (str_b[cur_j-1] == str_a[cur_i]):
+                        sec_term += rec_val[k-1, cur_i, cur_j-1]
+                ker_val[cur_i+1, k] = ker_val[cur_i, k] + lmb*lmb*sec_term
+            for cur_j in range(k, len_b):
+                sec_term = 0
+                for cur_i in range(1, len_a+1):
+                    if (str_a[cur_i-1] == str_b[cur_j]):
+                        sec_term += rec_val[k-1, cur_i-1, cur_j]
+                ker_val[len_a, cur_j+1] = ker_val[len_a, cur_j] + lmb*lmb*sec_term
+                
+            return ker_val[len_a, len_b]
+
+        @jit(nopython=True, parallel=True)
+        def jit_compute_kernel(first_array, second_array, equal_arrays, k, lmb):
+            kernel_array = np.zeros((first_array.shape[0], second_array.shape[0]))
+            if equal_arrays:
+                for i in prange(first_array.shape[0]):
+                    for j in range(i, second_array.shape[0]):
+                        kernel_value = compute_kernel_cell(first_array[i], second_array[j], k, lmb)
+                        kernel_array[i,j] = kernel_value
+                        kernel_array[j,i] = kernel_value
+            else:
+                for i in prange(first_array.shape[0]):
+                    for j in range(second_array.shape[0]):
+                        kernel_value = compute_kernel_cell(first_array[i], second_array[j], k, lmb)
+                        kernel_array[i,j] = kernel_value
+            return kernel_array
+        
+        first_array = transform_array(first_array)
+        second_array = transform_array(second_array)
+        # Calls it on a dummy to compile, takes around 3 seconds
+        jit_compute_kernel(first_array[:2], second_array[:2], np.array_equal(first_array, second_array), self.k, self.lmb)
+        # Computing the REAL kernel array
+        result_array = jit_compute_kernel(first_array, second_array, np.array_equal(first_array, second_array), self.k, self.lmb)   
+        
+        return result_array
