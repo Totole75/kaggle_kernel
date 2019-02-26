@@ -68,3 +68,55 @@ class sigmoid_kernel(abstract_kernel):
         multiplied_matrix = np.dot(data_array_1, data_array_2.T)
         kernel_array = np.tanh(self.alpha * multiplied_matrix + self.constant)
         return(kernel_array)
+    
+class levenshtein_kernel_from_dist(abstract_kernel):
+    def __init__(self, dist_matrix, sigma, center_kernel=True):
+        abstract_kernel.__init__(self, dist_matrix, center_kernel)
+        self.sigma = sigma
+        self.kernel_array = self.compute_kernel_dist(dist_matrix)
+        if center_kernel:
+            abstract_kernel.center_kernel_array(self)
+            
+    def compute_kernel_dist(self, dist_matrix):
+        k = dist_matrix*(- 1./(2 * np.power(self.sigma, 2)))
+        kernel_array = np.exp(k)
+        return(kernel_array)
+        
+    def predict_from_dist(self, dist_matrix, alpha):
+        K = self.compute_kernel_dist(dist_matrix)
+        return(alpha.reshape(1,-1).dot(K))
+    
+class levenshtein_kernel(abstract_kernel):
+    def __init__(self, data_array, sigma, center_kernel=True):
+        abstract_kernel.__init__(self, data_array, center_kernel)
+        self.sigma = sigma
+        self.kernel_array = self.compute_kernel(data_array)
+        if center_kernel:
+            abstract_kernel.center_kernel_array(self)
+            
+    def compute_kernel(self, data_array_1, data_array_2=[[-1]]):
+        if data_array_2[0][0] != -1:
+            #distance avec le vecteur de test
+            n1 = data_array_1.shape[0]
+            n2 = data_array_2.shape[0]
+            k = np.zeros((n1, n2))
+        
+            for i in tqdm(range(n1)):
+                for j in range(n2):
+                    d = distance(str(data_array_1[i,:]),str(data_array_2[j,:]))
+                    k[i,j] = d
+                    
+        if data_array_2[0][0] == -1:
+            # distance avec elle meme
+            n1 = data_array_1.shape[0]
+            n2 = data_array_1.shape[0]
+            k = np.zeros((n1, n2))
+        
+            for i in tqdm(range(n1)):
+                for j in range(i,n2):
+                    d = distance(str(data_array_1[i,:]),str(data_array_1[j,:]))
+                    k[i,j] = d
+                    k[j,i] = d
+        k *= (- 1./(2 * np.power(self.sigma, 2)))
+        kernel_array = np.exp(k)
+        return(kernel_array)
