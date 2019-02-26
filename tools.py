@@ -13,10 +13,10 @@ def read_file(path_file):
                     matrix[index-1] = 2*int(l.split(',')[1])-1
         elif len(L[0]) == 7:
             #X file
-            matrix = []
+            matrix = np.chararray((len(L)-1,100))
             for index, l in enumerate(L):
                 if index > 0:
-                    matrix.append(l.split(',')[1])
+                    matrix[index-1,:] = list(l.split(',')[1][:-2])
         elif len(L[0]) > 100:
             #X_mat100 file
             matrix = np.zeros((len(L),100))
