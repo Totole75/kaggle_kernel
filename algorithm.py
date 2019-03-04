@@ -86,6 +86,7 @@ class logistic_regression:
         return(alpha)
     
     def sigmoid(self, x):
+        #print(x)
         return 1 / (1 + np.exp(-x))
     
     def optimize_alpha(self):
@@ -95,7 +96,7 @@ class logistic_regression:
         W = np.diag(np.ones(self.label_array.shape[0]))
         alpha_new = self.ridge_weighted_regression(W, self.label_array)
         gap = 1
-        while t < 100 and gap>1e-15:
+        while t < 100 and gap>1e-8:
             alpha_old = alpha_new
             m = self.K.dot(alpha_new).reshape(-1,1)
             P = - self.sigmoid(-np.multiply(y,m))
@@ -105,7 +106,7 @@ class logistic_regression:
             z = m - y/P
             alpha_new = self.ridge_weighted_regression(W, z)
             gap = np.mean(abs(alpha_old - alpha_new))
-            #print(gap)
+            print(gap)
             t = t+1
         return(alpha_new)
 
@@ -114,6 +115,9 @@ class Kmeans:
     def __init__(self, kernel):
         self.kernel = kernel
         self.kernel_array = kernel.kernel_array
+        self.training_nb = self.kernel.training_nb
+        print(self.training_nb)
+        self.train_ker_array = kernel.kernel_array[:self.kernel.training_nb, :][:, :self.kernel.training_nb]
         self.n = self.kernel_array.shape[0]
 
     def create_clusters(self, cluster_nb, restart_nb=3):
@@ -125,11 +129,11 @@ class Kmeans:
             clusters = []
             for idx in range(cluster_nb):
                 clusters.append([])
-            cluster_rep = np.random.randint(cluster_nb, size=self.n)
+            cluster_rep = np.random.randint(cluster_nb, size=self.training_nb)
             for idx in range(cluster_nb):
                 #  Done in order to avoid empty clusters at the beginning
                 clusters[idx].append(idx)
-            for idx in range(cluster_nb, self.n):
+            for idx in range(cluster_nb, self.training_nb):
                 clusters[cluster_rep[idx]].append(idx)
             # Turning them into arrays for better handling
             for idx in range(cluster_nb):
@@ -141,12 +145,12 @@ class Kmeans:
             while (first_iter or diff_clusters):
                 first_iter = False
                 first_term = np.zeros(cluster_nb)
-                third_term = np.zeros((cluster_nb, self.n))
+                third_term = np.zeros((cluster_nb, self.training_nb))
                 for idx in range(cluster_nb):
-                    first_term[idx] = self.kernel_array[clusters[idx],:][:,clusters[idx]].mean() 
-                    third_term[idx, :] = self.kernel_array[clusters[idx], :].mean(axis=0)
-                first_term = np.tile(first_term, (self.n, 1)).T
-                second_term = np.diag(self.kernel_array)
+                    first_term[idx] = self.train_ker_array[clusters[idx],:][:,clusters[idx]].mean() 
+                    third_term[idx, :] = self.train_ker_array[clusters[idx], :].mean(axis=0)
+                first_term = np.tile(first_term, (self.training_nb, 1)).T
+                second_term = np.diag(self.train_ker_array)
                 second_term = np.tile(second_term, (cluster_nb, 1))
                 squared_distances = first_term + second_term - 2*third_term
                 cluster_rep = np.argmin(squared_distances, axis=0)
@@ -154,7 +158,7 @@ class Kmeans:
                 clusters = []
                 for idx in range(cluster_nb):
                     clusters.append([])
-                for idx in range(self.n):
+                for idx in range(self.training_nb):
                     clusters[cluster_rep[idx]].append(idx)
                 # Deleting the empty clusters
                 clusters_to_delete = []
@@ -180,7 +184,7 @@ class Kmeans:
                     cluster_energy = 0
                     for idx_i in clusters[cluster_idx]:
                         for idx_j in clusters[cluster_idx]:
-                            cluster_energy += self.kernel_array[idx_i, idx_j]
+                            cluster_energy += self.train_ker_array[idx_i, idx_j]
                     cluster_energy = cluster_energy / float(clusters[cluster_idx].shape[0])
                     energy += cluster_energy
             all_energies.append(energy)
@@ -191,10 +195,13 @@ class Kmeans:
         self.clusters = all_clusters[max_energy_idx]
         self.cluster_nb = len(self.clusters)
 
-    def predict(self, training_array, training_results, test_array):
-        test_nb = test_array.shape[0]
-        test_kernel_array = self.kernel.compute_kernel(test_array, test_array)
-        compare_kernel_array = self.kernel.compute_kernel(training_array, test_array)
+    def predict(self, training_results):
+        test_nb = self.n - self.training_nb
+        test_kernel_array = self.kernel_array[self.training_nb:, :][:, self.training_nb:]
+        #self.kernel.compute_kernel(test_array, test_array)
+        compare_kernel_array = self.kernel_array[:self.training_nb, :][:, self.training_nb:]
+        #self.kernel.compute_kernel(training_array, test_array)
+        
         # Computing the majority class of each cluster
         cluster_classes = np.zeros(self.cluster_nb)
         for idx in range(self.cluster_nb):
@@ -206,7 +213,7 @@ class Kmeans:
         first_term = np.zeros(self.cluster_nb)
         third_term = np.zeros((self.cluster_nb, test_nb))
         for idx in range(self.cluster_nb):
-            first_term[idx] = self.kernel_array[self.clusters[idx],:][:,self.clusters[idx]].mean() 
+            first_term[idx] = self.train_ker_array[self.clusters[idx],:][:,self.clusters[idx]].mean() 
             third_term[idx, :] = compare_kernel_array[self.clusters[idx], :].mean(axis=0)
         first_term = np.tile(first_term, (test_nb, 1)).T
         second_term = np.diag(test_kernel_array)

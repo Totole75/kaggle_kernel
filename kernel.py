@@ -13,9 +13,10 @@ class abstract_kernel:
     """
     General class for creating kernels, used with heritage
     """
-    def __init__(self, data_array, center_kernel):
+    def __init__(self, data_array, training_nb, center_kernel):
         self.data_array = data_array
         self.n = data_array.shape[0]
+        self.training_nb = training_nb
         self.kernel_array = np.zeros((self.n, self.n))
         return
 
@@ -24,20 +25,33 @@ class abstract_kernel:
         centering_array = np.identity(self.n) - U_array
         self.kernel_array = (centering_array).dot(self.kernel_array.dot(centering_array))
 
+    def normalize_kernel(self, normalizing_coef):
+        self.kernel_array = self.kernel_array / float(normalizing_coef)
+
     def predict(self, test_array, alpha):
-        K = self.compute_kernel(self.data_array, test_array)
+        K = self.kernel_array[:self.training_nb, :][:, self.training_nb:]
+        #K = self.compute_kernel(self.data_array, test_array)
         return(alpha.reshape(1,-1).dot(K))
 
     def compute_kernel(self, first_array, second_array):
         raise NotImplementedError()
 
+class imported_kernel(abstract_kernel):
+    """
+    Kernel whose array is imported from a .npy file
+    """
+    def __init__(self, data_array, training_nb, load_path, center_kernel=True):
+        abstract_kernel.__init__(self, data_array, training_nb, center_kernel)
+        self.kernel_array = np.load(load_path)
+        if center_kernel:
+            abstract_kernel.center_kernel_array(self)
 
 class linear_kernel(abstract_kernel):
     """
     Linear kernel : just your regular scalar product
     """
-    def __init__(self, data_array, center_kernel=True):
-        abstract_kernel.__init__(self, data_array, center_kernel)
+    def __init__(self, data_array, training_nb, center_kernel=True):
+        abstract_kernel.__init__(self, data_array, training_nb, center_kernel)
         # Computing the kernel array
         self.kernel_array = np.dot(data_array, data_array.T)
         if center_kernel:
@@ -47,8 +61,8 @@ class linear_kernel(abstract_kernel):
         return np.dot(first_array, second_array.T)
 
 class gaussian_kernel(abstract_kernel):
-    def __init__(self, data_array, sigma, center_kernel=True):
-        abstract_kernel.__init__(self, data_array, center_kernel)
+    def __init__(self, data_array, training_nb, sigma, center_kernel=True):
+        abstract_kernel.__init__(self, data_array, training_nb, center_kernel)
         self.sigma = sigma
         self.kernel_array = self.compute_kernel(data_array, data_array)
         if center_kernel:
@@ -65,8 +79,8 @@ class gaussian_kernel(abstract_kernel):
         return(kernel_array)
 
 class sigmoid_kernel(abstract_kernel):
-    def __init__(self, data_array, alpha, constant=0, center_kernel=True):
-        abstract_kernel.__init__(self, data_array, center_kernel)
+    def __init__(self, data_array, training_nb, alpha, constant=0, center_kernel=True):
+        abstract_kernel.__init__(self, data_array, training_nb, center_kernel)
         self.alpha = alpha
         self.constant = constant
         self.kernel_array = self.compute_kernel(data_array, data_array)
@@ -96,8 +110,8 @@ class levenshtein_kernel_from_dist(abstract_kernel):
         return(alpha.reshape(1,-1).dot(K))
     
 class levenshtein_kernel(abstract_kernel):
-    def __init__(self, data_array, sigma, center_kernel=True):
-        abstract_kernel.__init__(self, data_array, center_kernel)
+    def __init__(self, data_array, training_nb, sigma, center_kernel=True):
+        abstract_kernel.__init__(self, data_array, training_nb, center_kernel)
         self.sigma = sigma
         self.kernel_array = self.compute_kernel(data_array)
         if center_kernel:
@@ -134,15 +148,12 @@ class substring_kernel(abstract_kernel):
     """
     Substring kernel
     """
-    def __init__(self, data_array, k, lmb, center_kernel=True, load_path=None):
-        abstract_kernel.__init__(self, data_array, center_kernel)
+    def __init__(self, data_array, training_nb, k, lmb, center_kernel=True):
+        abstract_kernel.__init__(self, data_array, training_nb, center_kernel)
         self.k = k
         self.lmb = lmb
-        if (load_path==None):
-            # Computing the kernel array
-            self.kernel_array = self.compute_kernel(data_array, data_array)  
-        else:
-            self.kernel_array = np.load(load_path)
+        # Computing the kernel array
+        self.kernel_array = self.compute_kernel(data_array, data_array)  
         if center_kernel:
             abstract_kernel.center_kernel_array(self)
 
@@ -190,7 +201,7 @@ class substring_kernel(abstract_kernel):
         def jit_compute_kernel(first_array, second_array, equal_arrays, k, lmb):
             kernel_array = np.zeros((first_array.shape[0], second_array.shape[0]))
             if equal_arrays:
-                for i in prange(first_array.shape[0]):
+                for i in range(first_array.shape[0]):
                     for j in range(i, second_array.shape[0]):
                         kernel_value = compute_kernel_cell(first_array[i], second_array[j], k, lmb)
                         kernel_array[i,j] = kernel_value
