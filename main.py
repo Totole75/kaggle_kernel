@@ -15,8 +15,7 @@ success_percentage = []
 
 k_list = [6, 8, 2]
 lmb_list = [0.45, 0.3, 0.17]
-#C_list = [100, 100000, 10]
-C_list = [100, 100, 100]
+C_list = [100, 100000, 10]
 
 for file_idx in range(3):
     train_file_name = "Xtr" + str(file_idx) + "_mat100.csv"
@@ -75,34 +74,34 @@ for file_idx in range(3):
     # test_classes = np.array(test_classes)
     # print("percentage of ones: ", np.mean(test_classes))
 
-    # print("svm")
-    # C_svm = C_list[file_idx]
+    print("svm")
+    C_svm = C_list[file_idx]
 
-    # train_ker = lin_ker.kernel_array[:training_nb, :][:, :training_nb]
-    # test_ker = lin_ker.kernel_array[:training_nb, :][:, training_nb:]
-    # # Dividing by max to prevent numerical problems
-    # train_ker = train_ker / lin_ker.kernel_array.max()
-    # test_ker = test_ker / lin_ker.kernel_array.max()
-    # print(train_ker, test_ker)
+    train_ker = lin_ker.kernel_array[:training_nb, :][:, :training_nb]
+    test_ker = lin_ker.kernel_array[:training_nb, :][:, training_nb:]
+    # Dividing by max to prevent numerical problems
+    train_ker = train_ker / lin_ker.kernel_array.max()
+    test_ker = test_ker / lin_ker.kernel_array.max()
+    print(train_ker, test_ker)
 
-    # clf = svm.SVC(kernel='precomputed', C=C_svm)
-    # print("fit")
-    # clf.get_params()
-    # clf.fit(train_ker, training_labels)
+    clf = svm.SVC(kernel='precomputed', C=C_svm)
+    print("fit")
+    clf.get_params()
+    clf.fit(train_ker, training_labels)
     
-    # predictions = clf.predict(test_ker.T)
-    # print(predictions)
-    # test_classes = []
-    # for i in range(len(test_labels)):
-    #     test_classes.append(0 if predictions[i] < 0 else 1)
-    # test_classes = np.array(test_classes)
-    # print("percentage of ones: ", np.mean(test_classes))
+    predictions = clf.predict(test_ker.T)
+    print(predictions)
+    test_classes = []
+    for i in range(len(test_labels)):
+        test_classes.append(0 if predictions[i] < 0 else 1)
+    test_classes = np.array(test_classes)
+    print("percentage of ones: ", np.mean(test_classes))
 
     # prediction_ridge = gaus_ker.predict(test_array, alpha_ridge)
 
-    kmeans_clustering = Kmeans(lin_ker)
-    kmeans_clustering.create_clusters(cluster_nb=100, restart_nb=20)
-    test_classes = kmeans_clustering.predict(training_labels)
+    # kmeans_clustering = Kmeans(lin_ker)
+    # kmeans_clustering.create_clusters(cluster_nb=100, restart_nb=20)
+    # test_classes = kmeans_clustering.predict(training_labels)
 
     #########################################
     ### Put your code before this comment ###
