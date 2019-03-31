@@ -11,7 +11,7 @@ class SVM:
         self.labels_pos_neg = np.array([1 if l == 1 else -1 for l in self.labels])
         self.lamb = lamb
         self.kernel = kernel
-        self.kernel_array = kernel.kernel_array
+        self.kernel_array = kernel.kernel_array[:kernel.training_nb,]
         self.n = len(self.labels)
 
     def optimize_alpha(self, method=1):

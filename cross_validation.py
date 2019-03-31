@@ -7,11 +7,13 @@ def grid_SVM(sigmas, lambdas, data_train, label_train, data_test, label_test):
     results = []
     for s in sigmas:
         for l in lambdas:
-            kernel = levenshtein_kernel_from_dist(data_train, s)
+            data = np.concatenate((data_train, data_test), axis=0)
+            kernel = cross_validate_kernel(data, data_train.shape[0], center_kernel=False)
             svm = SVM(label_train, l, kernel)
             alpha = svm.optimize_alpha()
-            
-            predictions = kernel.predict_from_dist(data_test, alpha)
+            print(alpha.shape)
+            predictions = kernel.predict_precomputed(alpha)
+            predictions.reshape((1, -1))
             test_classes = []
             for i in range(len(label_test)):
                 test_classes.append(0 if predictions[0, i] < 0 else 1)
@@ -39,8 +41,8 @@ def cross_validate_SVM(nb_folds, low_sigma, high_sigma, nb_points_sigma, low_lam
     lambdas = [low_lambda * np.power(np.exp((1. / max(nb_points_lambda - 1, 1)) * np.log(high_lambda / low_lambda)), i) for i in range(nb_points_lambda)]
     for idx in folds_idx:
         invert_idx = np.invert(idx)
-        data_test = data[invert_idx, :]
-        data_test = data_test[:, idx]
+        data_test = data[idx, :]
+        data_test = data_test[:, invert_idx]
         label_test = label[idx]
         data_train = data[invert_idx, :]
         data_train = data_train[:, invert_idx]
@@ -64,13 +66,20 @@ def cross_validate_SVM(nb_folds, low_sigma, high_sigma, nb_points_sigma, low_lam
 file_idx = 0
 folder_name = "data/"
 
-name_file_training = 'substring_test' + str(file_idx)
-data_array = np.load(name_file_training + '.npy')[:500, :500]
+nb_data = 2000
+
+name_file_training = 'substring_ker_file' + str(file_idx)
+data_array = np.exp(1e16 * np.load(os.path.join(folder_name, name_file_training + '.npy'))[:nb_data, :nb_data])
+U_array = np.ones(data_array.shape) / float(data_array.shape[0])
+centering_array = np.identity(data_array.shape[0]) - U_array
+data_array = (centering_array).dot(data_array.dot(centering_array))
+print(np.max(data_array))
 
 result_file_name = "Ytr"+ str(file_idx) +".csv"
-result_array = read_file(os.path.join(folder_name, result_file_name))[:500]
+result_array = read_file(os.path.join(folder_name, result_file_name))[:nb_data]
 
-results = cross_validate_SVM(2, 1e-5, 1, 3, 1e-10, 3, 5, data_array, result_array)
-print(max(results, key=lambda x: x["success_rate"]))
+results = cross_validate_SVM(3, 1, 1, 1, 1e-15, 1, 4, data_array, result_array)
+results_valid = [r for r in results if r["percentage_ones"] > 0.1 and r["percentage_ones"] < 0.9]
+print(max(results_valid, key=lambda x: x["success_rate"]))
 
 

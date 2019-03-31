@@ -46,6 +46,13 @@ class imported_kernel(abstract_kernel):
         if center_kernel:
             abstract_kernel.center_kernel_array(self)
 
+    def __init__(self, data_array, training_nb, center_kernel=True):
+        abstract_kernel.__init__(self, data_array, training_nb, center_kernel)
+        self.kernel_array = data_array
+        if center_kernel:
+            abstract_kernel.center_kernel_array(self)
+
+
 class linear_kernel(abstract_kernel):
     """
     Linear kernel : just your regular scalar product
